@@ -1,55 +1,1147 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DualHorizon | Record Dual Video</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background: radial-gradient(circle at top left, #ecfdf5, #d1fae5, #f8fafc);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.1);
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DualHorizon — Record Once, Export Twice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080808;
+    --white: #f5f2ec;
+    --accent: #ff3d00;
+    --accent2: #00e5ff;
+    --gold: #ffd600;
+    --mid: #1a1a1a;
+    --border: rgba(245,242,236,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s, width 0.2s, height 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(255,61,0,0.5);
+    border-radius: 50%;
+    position: fixed; top: 0; left: 0;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.15s ease-out, width 0.2s, height 0.2s;
+  }
+  body:hover .cursor { opacity: 1; }
+
+  /* Nav */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.5rem 3rem;
+    background: linear-gradient(to bottom, rgba(8,8,8,0.95), transparent);
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.1em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span { color: var(--accent); }
+  nav ul { list-style: none; display: flex; gap: 2.5rem; }
+  nav a {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,242,236,0.55);
+    text-decoration: none;
+    transition: color 0.2s;
+    font-weight: 500;
+  }
+  nav a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--accent);
+    color: var(--white) !important;
+    padding: 0.55rem 1.3rem;
+    border-radius: 2px;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.1em;
+    transition: background 0.2s, transform 0.2s !important;
+  }
+  .nav-cta:hover { background: #ff6030 !important; transform: translateY(-1px); }
+
+  /* Hero */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+    padding: 0 3rem;
+  }
+
+  /* Animated grid bg */
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,61,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,61,0,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 60px 60px; }
+  }
+
+  /* Noise overlay */
+  .hero::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  .hero-inner {
+    position: relative; z-index: 2;
+    text-align: center;
+    max-width: 1000px;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,61,0,0.12);
+    border: 1px solid rgba(255,61,0,0.3);
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2.5rem;
+    font-family: 'Space Mono', monospace;
+    animation: fadeUp 0.6s ease both;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s ease infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 14vw, 13rem);
+    line-height: 0.88;
+    letter-spacing: -0.01em;
+    animation: fadeUp 0.7s 0.1s ease both;
+    margin-bottom: 0.1em;
+  }
+  h1 .line2 { color: var(--accent); display: block; }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: rgba(245,242,236,0.55);
+    font-weight: 300;
+    max-width: 540px;
+    margin: 1.8rem auto 3rem;
+    line-height: 1.6;
+    animation: fadeUp 0.7s 0.25s ease both;
+  }
+  .hero-sub strong { color: var(--white); font-weight: 500; }
+
+  .hero-actions {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    animation: fadeUp 0.7s 0.35s ease both;
+  }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--accent);
+    color: var(--white);
+    padding: 1rem 2.2rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 0 40px rgba(255,61,0,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(255,61,0,0.5); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: transparent;
+    color: var(--white);
+    padding: 1rem 2.2rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1px solid rgba(245,242,236,0.2);
+    border-radius: 2px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-secondary:hover { border-color: rgba(245,242,236,0.5); background: rgba(245,242,236,0.04); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Dual frame visual */
+  .hero-visual {
+    position: relative; z-index: 2;
+    display: flex; justify-content: center; align-items: flex-end;
+    gap: 1.5rem;
+    margin-top: 5rem;
+    padding-bottom: 5rem;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  .frame-landscape {
+    width: 320px; height: 180px;
+    border: 2px solid rgba(0,229,255,0.4);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    background: var(--mid);
+    box-shadow: 0 0 60px rgba(0,229,255,0.1), inset 0 0 40px rgba(0,0,0,0.5);
+  }
+  .frame-portrait {
+    width: 100px; height: 180px;
+    border: 2px solid rgba(255,61,0,0.5);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    background: var(--mid);
+    box-shadow: 0 0 60px rgba(255,61,0,0.15), inset 0 0 40px rgba(0,0,0,0.5);
+  }
+
+  .frame-label {
+    position: absolute; bottom: 8px; left: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .frame-landscape .frame-label { color: var(--accent2); }
+  .frame-portrait .frame-label { color: var(--accent); }
+
+  .frame-inner {
+    position: absolute; inset: 0;
+    background: 
+      radial-gradient(circle at 40% 50%, rgba(0,229,255,0.06) 0%, transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 20px,
+        rgba(255,255,255,0.02) 20px,
+        rgba(255,255,255,0.02) 21px
+      );
+  }
+  .frame-portrait .frame-inner {
+    background: 
+      radial-gradient(circle at 50% 40%, rgba(255,61,0,0.06) 0%, transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 20px,
+        rgba(255,255,255,0.02) 20px,
+        rgba(255,255,255,0.02) 21px
+      );
+  }
+
+  .frame-rec {
+    position: absolute; top: 10px; left: 10px;
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+  .rec-dot { width: 7px; height: 7px; background: var(--accent); border-radius: 50%; animation: pulse 1s ease infinite; }
+
+  .frame-crosshair {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    opacity: 0.25;
+  }
+  .frame-crosshair::before,
+  .frame-crosshair::after {
+    content: '';
+    position: absolute;
+    background: var(--accent2);
+  }
+  .frame-crosshair::before { width: 100%; height: 1px; top: 50%; transform: translateY(-50%); }
+  .frame-crosshair::after  { height: 100%; width: 1px; left: 50%; transform: translateX(-50%); }
+
+  .frame-portrait .frame-crosshair::before,
+  .frame-portrait .frame-crosshair::after { background: var(--accent); }
+
+  .frame-connect {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .connect-line {
+    height: 1px;
+    width: 40px;
+    background: linear-gradient(to right, rgba(0,229,255,0.4), rgba(255,214,0,0.6), rgba(255,61,0,0.4));
+  }
+
+  /* Divider */
+  .divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 0 3rem;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex; justify-content: center; gap: 0;
+    padding: 3rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1; max-width: 200px;
+    text-align: center;
+    padding: 0 2rem;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--accent);
+    display: block;
+  }
+  .stat-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,242,236,0.4);
+    margin-top: 0.3rem;
+    display: block;
+  }
+
+  /* Features */
+  section { padding: 8rem 3rem; }
+  .section-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: block;
+  }
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 7vw, 6rem);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    max-width: 700px;
+  }
+
+  .features-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+    margin-top: 5rem;
+  }
+
+  .features-list { display: flex; flex-direction: column; gap: 0; }
+  .feature-item {
+    display: flex; gap: 1.5rem;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--border);
+    cursor: default;
+    transition: background 0.2s;
+    position: relative;
+  }
+  .feature-item:first-child { border-top: 1px solid var(--border); }
+  .feature-item::before {
+    content: '';
+    position: absolute; left: -3rem; top: 0; bottom: 0; width: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.3s;
+  }
+  .feature-item:hover::before { transform: scaleY(1); }
+  .feature-icon {
+    width: 44px; height: 44px;
+    flex-shrink: 0;
+    background: rgba(255,61,0,0.08);
+    border: 1px solid rgba(255,61,0,0.2);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+  }
+  .feature-text h3 {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.02em;
+  }
+  .feature-text p {
+    font-size: 0.82rem;
+    color: rgba(245,242,236,0.45);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* Phone mockup area */
+  .phone-visual {
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+    height: 550px;
+  }
+  .phone-outer {
+    width: 220px;
+    height: 440px;
+    border: 2px solid rgba(245,242,236,0.15);
+    border-radius: 36px;
+    background: #111;
+    position: relative;
+    box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+    overflow: hidden;
+  }
+  .phone-screen {
+    position: absolute; inset: 8px;
+    border-radius: 28px;
+    background: #0a0a0a;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .phone-viewfinder {
+    flex: 1;
+    background: linear-gradient(135deg, #0d1117 0%, #111 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Dual frame overlay on phone */
+  .phone-frame-land {
+    position: absolute;
+    inset: 12px;
+    border: 1px dashed rgba(0,229,255,0.4);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .phone-frame-port {
+    position: absolute;
+    left: 50%; top: 12px; bottom: 12px;
+    width: 80px;
+    transform: translateX(-50%);
+    border: 1px dashed rgba(255,61,0,0.5);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .phone-label-land {
+    position: absolute; top: 14px; left: 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.45rem; letter-spacing: 0.1em;
+    color: var(--accent2); opacity: 0.7;
+  }
+  .phone-label-port {
+    position: absolute; top: 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.45rem; letter-spacing: 0.1em;
+    color: var(--accent); opacity: 0.7;
+    width: 80px; text-align: center;
+    left: 50%; transform: translateX(-50%);
+  }
+
+  .phone-grid-bg {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .phone-controls {
+    padding: 0.6rem;
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0,0,0,0.6);
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .ctrl-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+  }
+  .ctrl-rec-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 20px rgba(255,61,0,0.5);
+    animation: recPulse 2s ease infinite;
+  }
+  @keyframes recPulse {
+    0%,100% { box-shadow: 0 0 20px rgba(255,61,0,0.5); }
+    50% { box-shadow: 0 0 35px rgba(255,61,0,0.8); }
+  }
+  .rec-inner { width: 14px; height: 14px; background: white; border-radius: 2px; }
+
+  .phone-dynamic-island {
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 22px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 10;
+  }
+
+  /* Glow behind phone */
+  .phone-glow {
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,61,0,0.12) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+
+  /* Formats section */
+  .formats-section { background: var(--mid); }
+  .formats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    margin-top: 4rem;
+    background: var(--border);
+  }
+  .format-card {
+    background: var(--black);
+    padding: 3rem 2.5rem;
+    transition: background 0.3s;
+  }
+  .format-card:hover { background: #0f0f0f; }
+  .format-ratio {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 1;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 1rem;
+  }
+  .format-card:nth-child(2) .format-ratio { color: var(--accent2); }
+  .format-card:nth-child(3) .format-ratio { color: var(--gold); }
+  .format-name { font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem; }
+  .format-desc { font-size: 0.8rem; color: rgba(245,242,236,0.4); line-height: 1.6; font-weight: 300; }
+  .format-platforms {
+    margin-top: 1.5rem;
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+  }
+  .platform-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: rgba(245,242,236,0.5);
+  }
+
+  /* Specs */
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5px;
+    margin-top: 4rem;
+    background: var(--border);
+  }
+  .spec-card {
+    background: var(--black);
+    padding: 2.5rem;
+    display: flex; gap: 1.5rem; align-items: flex-start;
+  }
+  .spec-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    line-height: 1;
+    color: var(--accent);
+    flex-shrink: 0;
+    min-width: 80px;
+  }
+  .spec-info h4 { font-size: 0.9rem; font-weight: 500; margin-bottom: 0.3rem; }
+  .spec-info p { font-size: 0.78rem; color: rgba(245,242,236,0.4); line-height: 1.5; font-weight: 300; }
+
+  /* Pricing */
+  .pricing-section { text-align: center; }
+  .pricing-cards {
+    display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 4rem;
+  }
+  .pricing-card {
+    background: var(--mid);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3rem 2.5rem;
+    width: 280px;
+    text-align: left;
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+  .pricing-card:hover { border-color: rgba(255,61,0,0.3); transform: translateY(-4px); }
+  .pricing-card.featured {
+    border-color: rgba(255,61,0,0.4);
+    background: rgba(255,61,0,0.04);
+  }
+  .pricing-badge-card {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: white;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.3rem 0.8rem; border-radius: 2px;
+    white-space: nowrap;
+  }
+  .price-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    line-height: 1;
+    color: var(--white);
+    display: block;
+  }
+  .price-period {
+    font-size: 0.75rem;
+    color: rgba(245,242,236,0.4);
+    letter-spacing: 0.1em;
+    display: block;
+    margin-bottom: 2rem;
+  }
+  .price-features { list-style: none; margin-bottom: 2.5rem; }
+  .price-features li {
+    font-size: 0.82rem;
+    color: rgba(245,242,236,0.65);
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex; gap: 0.6rem;
+    font-weight: 300;
+  }
+  .price-features li::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+  .price-features li.dimmed { color: rgba(245,242,236,0.25); }
+  .price-features li.dimmed::before { color: rgba(245,242,236,0.15); }
+
+  .btn-full {
+    display: block; text-align: center;
+    background: var(--accent);
+    color: var(--white);
+    padding: 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: background 0.2s;
+  }
+  .btn-full:hover { background: #ff6030; }
+  .btn-full-ghost {
+    display: block; text-align: center;
+    background: transparent;
+    color: var(--white);
+    padding: 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    transition: border-color 0.2s;
+  }
+  .btn-full-ghost:hover { border-color: rgba(245,242,236,0.3); }
+
+  /* CTA */
+  .cta-section {
+    background: var(--accent);
+    padding: 8rem 3rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: 'DH';
+    position: absolute;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40vw;
+    color: rgba(0,0,0,0.07);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+    line-height: 1;
+  }
+  .cta-section h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 0.9;
+    color: var(--white);
+    position: relative; z-index: 1;
+  }
+  .cta-section p {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.75);
+    max-width: 400px;
+    margin: 1.5rem auto 3rem;
+    font-weight: 300;
+    position: relative; z-index: 1;
+  }
+  .cta-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 1; }
+  .btn-white {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: var(--white);
+    color: var(--accent);
+    padding: 1rem 2rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 2px;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .btn-white:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+  .btn-white-ghost {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    background: transparent;
+    color: var(--white);
+    padding: 1rem 2rem;
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border: 1.5px solid rgba(255,255,255,0.5);
+    border-radius: 2px;
+    transition: border-color 0.2s;
+  }
+  .btn-white-ghost:hover { border-color: white; }
+
+  /* Footer */
+  footer {
+    padding: 3rem;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 1rem;
+  }
+  .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--white); }
+  .footer-logo span { color: var(--accent); }
+  footer p { font-size: 0.75rem; color: rgba(245,242,236,0.3); font-weight: 300; }
+  .footer-links { display: flex; gap: 2rem; }
+  .footer-links a {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(245,242,236,0.35);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--white); }
+
+  /* Scroll reveal */
+  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s, transform 0.7s; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    nav { padding: 1.2rem 1.5rem; }
+    nav ul { display: none; }
+    section { padding: 5rem 1.5rem; }
+    .stats-bar { flex-wrap: wrap; gap: 2rem; padding: 2rem 1.5rem; }
+    .stat { border-right: none; flex: none; width: 45%; }
+    .features-layout { grid-template-columns: 1fr; gap: 3rem; }
+    .formats-grid { grid-template-columns: 1fr; }
+    .specs-grid { grid-template-columns: 1fr; }
+    .hero { padding: 0 1.5rem; }
+    .hero-visual { gap: 0.8rem; }
+    .frame-landscape { width: 220px; height: 124px; }
+    footer { flex-direction: column; text-align: center; padding: 2rem 1.5rem; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+    .divider { margin: 0 1.5rem; }
+  }
+</style>
 </head>
-<body class="p-6">
-    <div class="glass max-w-md w-full rounded-3xl p-8 text-center">
-        <div class="w-24 h-24 bg-emerald-500 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-emerald-200">
-             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-        </div>
+<body>
 
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">DualHorizon</h1>
-        <p class="text-emerald-600 font-medium mb-4">Record Dual Video (iOS)</p>
-        
-        <p class="text-gray-500 text-sm mb-8 leading-relaxed">
-            Ghi lại mọi khoảnh khắc từ cả hai phía camera cùng một lúc. Trải nghiệm quay video góc đôi mượt mà và đẳng cấp.
-        </p>
+<!-- Cursor -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
 
-        <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" 
-           class="inline-block w-full py-4 px-6 bg-gray-900 text-white rounded-2xl font-semibold hover:bg-black transition-all shadow-xl shadow-gray-200 mb-4">
-            Tải trên App Store
-        </a>
+<!-- Nav -->
+<nav>
+  <a href="#" class="logo">Dual<span>Horizon</span></a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#formats">Formats</a></li>
+    <li><a href="#specs">Specs</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" class="nav-cta">↗ Download</a></li>
+  </ul>
+</nav>
 
-        <div class="pt-6 border-t border-gray-100 flex justify-center space-x-4 text-xs text-gray-400">
-            <a href="#" class="hover:text-emerald-500">Quyền riêng tư</a>
-            <span>•</span>
-            <a href="#" class="hover:text-emerald-500">Hỗ trợ</a>
-            <span>•</span>
-            <a href="/app-ads.txt" class="hover:text-emerald-500">app-ads.txt</a>
-        </div>
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Record Once · Export Twice
     </div>
+    <h1>
+      DUAL
+      <span class="line2">HORIZON</span>
+    </h1>
+    <p class="hero-sub">
+      Stop recording twice. One take gives you <strong>16:9 landscape</strong> for YouTube and <strong>9:16 portrait</strong> for TikTok, Reels & Shorts — simultaneously.
+    </p>
+    <div class="hero-actions">
+      <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        App Store — Free
+      </a>
+      <a href="#features" class="btn-secondary">
+        See features ↓
+      </a>
+    </div>
+  </div>
+
+  <!-- Visual -->
+  <div class="hero-visual">
+    <div class="frame-landscape">
+      <div class="frame-inner"></div>
+      <div class="frame-crosshair"></div>
+      <div class="frame-rec"><span class="rec-dot"></span> REC</div>
+      <div class="frame-label">16:9 · LANDSCAPE · YOUTUBE</div>
+    </div>
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:0.3rem;">
+      <div class="frame-connect">
+        <span class="connect-line"></span>
+        <span>1 TAKE</span>
+        <span class="connect-line"></span>
+      </div>
+    </div>
+    <div class="frame-portrait">
+      <div class="frame-inner"></div>
+      <div class="frame-crosshair"></div>
+      <div class="frame-label">9:16 · PORTRAIT</div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat reveal">
+    <span class="stat-num">2×</span>
+    <span class="stat-label">Videos from one take</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">4K</span>
+    <span class="stat-label">Max resolution</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">60</span>
+    <span class="stat-label">FPS support</span>
+  </div>
+  <div class="stat reveal">
+    <span class="stat-num">0</span>
+    <span class="stat-label">Quality loss</span>
+  </div>
+</div>
+
+<!-- Features -->
+<section id="features">
+  <span class="section-label">Why DualHorizon</span>
+  <h2 class="section-title reveal">PRO FEATURES<br>BUILT IN</h2>
+  <div class="features-layout">
+    <div class="features-list">
+      <div class="feature-item reveal">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text">
+          <h3>Record Once, Export Twice</h3>
+          <p>Shoot one high-quality video and instantly get both 16:9 landscape and 9:16 portrait — no repeat takes, no cropping guesswork.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="feature-icon">🎥</div>
+        <div class="feature-text">
+          <h3>4K & 1080p HD Support</h3>
+          <p>Record in stunning full resolution. Post-recording processing ensures maximum quality from your iPhone's camera.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="feature-icon">🎬</div>
+        <div class="feature-text">
+          <h3>Cinematic Action Mode</h3>
+          <p>Advanced horizon lock and stabilization keep footage buttery smooth — even when you're on the move.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="feature-icon">🔭</div>
+        <div class="feature-text">
+          <h3>Multiple Lenses</h3>
+          <p>Switch between Ultra-Wide (0.5×), Wide (1×), and Telephoto (2×) on supported devices.</p>
+        </div>
+      </div>
+      <div class="feature-item reveal">
+        <div class="feature-icon">🎛</div>
+        <div class="feature-text">
+          <h3>Pro Controls</h3>
+          <p>24/30/60 fps, Flash, Rule-of-Thirds Grid, MOV or MP4 format — all right where you need them.</p>
+        </div>
+      </div>
+    </div>
+    <div class="phone-visual reveal">
+      <div class="phone-glow"></div>
+      <div class="phone-outer">
+        <div class="phone-dynamic-island"></div>
+        <div class="phone-screen">
+          <div class="phone-viewfinder">
+            <div class="phone-grid-bg"></div>
+            <div class="phone-frame-land"></div>
+            <div class="phone-frame-port"></div>
+            <div class="phone-label-land">16:9</div>
+            <div class="phone-label-port">9:16</div>
+          </div>
+          <div class="phone-controls">
+            <div class="ctrl-btn">⚡</div>
+            <div class="ctrl-rec-btn"><div class="rec-inner"></div></div>
+            <div class="ctrl-btn">↩</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- Formats -->
+<section id="formats" class="formats-section">
+  <span class="section-label">Output Formats</span>
+  <h2 class="section-title reveal">MADE FOR<br>EVERY PLATFORM</h2>
+  <div class="formats-grid">
+    <div class="format-card reveal">
+      <span class="format-ratio">16:9</span>
+      <div class="format-name">Landscape</div>
+      <div class="format-desc">The classic widescreen format perfect for long-form content and cinematic storytelling.</div>
+      <div class="format-platforms">
+        <span class="platform-tag">YouTube</span>
+        <span class="platform-tag">Facebook</span>
+        <span class="platform-tag">LinkedIn</span>
+        <span class="platform-tag">Vimeo</span>
+      </div>
+    </div>
+    <div class="format-card reveal">
+      <span class="format-ratio">9:16</span>
+      <div class="format-name">Portrait</div>
+      <div class="format-desc">Full-screen vertical format dominating the mobile era of social media consumption.</div>
+      <div class="format-platforms">
+        <span class="platform-tag">TikTok</span>
+        <span class="platform-tag">Reels</span>
+        <span class="platform-tag">Shorts</span>
+        <span class="platform-tag">Stories</span>
+      </div>
+    </div>
+    <div class="format-card reveal">
+      <span class="format-ratio">1×</span>
+      <div class="format-name">One Take</div>
+      <div class="format-desc">You record once. DualHorizon handles the rest — exporting both formats automatically after the shoot.</div>
+      <div class="format-platforms">
+        <span class="platform-tag">MOV</span>
+        <span class="platform-tag">MP4</span>
+        <span class="platform-tag">H.264</span>
+        <span class="platform-tag">HEVC</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Specs -->
+<section id="specs">
+  <span class="section-label">Technical Specs</span>
+  <h2 class="section-title reveal">BUILT FOR<br>CREATORS</h2>
+  <div class="specs-grid reveal">
+    <div class="spec-card">
+      <div class="spec-num">4K</div>
+      <div class="spec-info">
+        <h4>Maximum Resolution</h4>
+        <p>Record in 4K Ultra HD or 1080p Full HD — your choice, maximum quality guaranteed.</p>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-num">60</div>
+      <div class="spec-info">
+        <h4>Frames Per Second</h4>
+        <p>Choose 24 fps for cinematic look, 30 fps for standard, or 60 fps for ultra-smooth motion.</p>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-num">3×</div>
+      <div class="spec-info">
+        <h4>Lens Options</h4>
+        <p>Ultra-Wide, Wide, and Telephoto — switch lenses freely during your creative session.</p>
+      </div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-num">2MB</div>
+      <div class="spec-info">
+        <h4>Tiny App Size</h4>
+        <p>Just 2 megabytes. DualHorizon is incredibly lightweight — all power, zero bloat.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" class="pricing-section">
+  <span class="section-label">Pricing</span>
+  <h2 class="section-title reveal" style="margin: 0 auto; text-align:center;">SIMPLE<br>PRICING</h2>
+  <div class="pricing-cards">
+    <div class="pricing-card reveal">
+      <span class="price-amount">FREE</span>
+      <span class="price-period">Try before you buy</span>
+      <ul class="price-features">
+        <li>1 dual-export recording to try</li>
+        <li>Full camera viewfinder UI</li>
+        <li>16:9 + 9:16 preview</li>
+        <li class="dimmed">Unlimited recordings</li>
+        <li class="dimmed">Action Mode stabilization</li>
+        <li class="dimmed">All premium settings</li>
+      </ul>
+      <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" class="btn-full-ghost">Download Free</a>
+    </div>
+    <div class="pricing-card featured reveal">
+      <div class="pricing-badge-card">Best Value · One-Time</div>
+      <span class="price-amount">$9.99</span>
+      <span class="price-period">DualHorizon Pro — Lifetime</span>
+      <ul class="price-features">
+        <li>Unlimited dual-export recordings</li>
+        <li>Action Mode stabilization</li>
+        <li>4K + 1080p recording</li>
+        <li>All frame rates (24/30/60fps)</li>
+        <li>All camera lenses</li>
+        <li>MOV & MP4 export</li>
+      </ul>
+      <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" class="btn-full">Get Pro — $9.99</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>RECORD LESS.<br>POST MORE.</h2>
+  <p>Join creators who've unlocked the power of one take for every platform.</p>
+  <div class="cta-btns">
+    <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" class="btn-white">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      Download on App Store
+    </a>
+    <a href="#features" class="btn-white-ghost">Learn More ↓</a>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">Dual<span>Horizon</span></div>
+  <div class="footer-links">
+    <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726">App Store</a>
+    <a href="https://www.apple.com/legal/privacy">Privacy Policy</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+  </div>
+  <p>©2025 mTech Co., Ltd. · Made with ❤ by Quan Ho Sy</p>
+</footer>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '20px';
+      cursor.style.height = '20px';
+      ring.style.width = '50px';
+      ring.style.height = '50px';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '12px';
+      cursor.style.height = '12px';
+      ring.style.width = '36px';
+      ring.style.height = '36px';
+    });
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => io.observe(el));
+</script>
 </body>
 </html>
