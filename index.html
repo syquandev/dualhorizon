@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DualHorizon | Record Dual Video</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at top left, #ecfdf5, #d1fae5, #f8fafc);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="glass max-w-md w-full rounded-3xl p-8 text-center">
+        <div class="w-24 h-24 bg-emerald-500 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-emerald-200">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">DualHorizon</h1>
+        <p class="text-emerald-600 font-medium mb-4">Record Dual Video (iOS)</p>
+        
+        <p class="text-gray-500 text-sm mb-8 leading-relaxed">
+            Ghi lại mọi khoảnh khắc từ cả hai phía camera cùng một lúc. Trải nghiệm quay video góc đôi mượt mà và đẳng cấp.
+        </p>
+
+        <a href="https://apps.apple.com/us/app/dualhorizon-record-dual-video/id6761413726" 
+           class="inline-block w-full py-4 px-6 bg-gray-900 text-white rounded-2xl font-semibold hover:bg-black transition-all shadow-xl shadow-gray-200 mb-4">
+            Tải trên App Store
+        </a>
+
+        <div class="pt-6 border-t border-gray-100 flex justify-center space-x-4 text-xs text-gray-400">
+            <a href="#" class="hover:text-emerald-500">Quyền riêng tư</a>
+            <span>•</span>
+            <a href="#" class="hover:text-emerald-500">Hỗ trợ</a>
+            <span>•</span>
+            <a href="/app-ads.txt" class="hover:text-emerald-500">app-ads.txt</a>
+        </div>
+    </div>
+</body>
+</html>
